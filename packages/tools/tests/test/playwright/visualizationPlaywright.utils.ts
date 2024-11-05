@@ -118,7 +118,41 @@ export const evaluatePlaywrightVisTests = async (engineType = "webgl2", testFile
                 globalConfig: getGlobalConfig({ root: config.root }),
             });
             const renderCount = testCase.renderCount || 1;
+            //Consider commenting line below
             const renderResult = await page.evaluate(evaluateRenderSceneForVisualization, { renderCount });
+
+            //Incorporate Minh and Cam's code into this part of the code
+            if (testCase.isAudioTest === true) {
+                console.log("Audio Test Loaded");
+                //Using page.evaulate to interact with the audioContext
+                await page.evaluate(() => {
+                    const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
+
+                    //Creating
+                    const audioEngine = BABYLON.Engine.audioEngine!;
+                    //Creating an audioContext
+                    const audioContext = audioEngine.audioContext!;
+                    //Conneceting masterGainNode
+                    const masterGainNode = audioEngine.masterGain!;
+
+                    //Creating an analyserNode for data
+                    const analyzer = new AnalyserNode(audioContext);
+                    masterGainNode.connect(analyzer);
+
+                    /*
+                    const freqData = new Float32Array(analyzer.frequencyBinCount);
+
+                    const visualizationCanvas = document.createElement("canvas");
+                    visualizationCanvas.width = canvas.width;
+                    visualizationCanvas.height = canvas.height;
+                    visualizationCanvas.style.position = "absolute";
+                    visualizationCanvas.style.top = canvas.offsetTop + "px";
+                    visualizationCanvas.style.left = "0px"; // Align to the very left of the screen
+                    document.body.appendChild(visualizationCanvas);
+                    */
+                });
+            }
+
             expect(renderResult).toBeTruthy();
             if (engineType.startsWith("webgl")) {
                 const glError = await page.evaluate(evaluateIsGLError);

@@ -8,36 +8,6 @@
             /*
             Launch the playground to be use to test changes in dev packages
             */
-            "type": "msedge",
-            "request": "launch",
-            "name": "Run and Watch Dev Server (ES5-Dev)",
-            "url": "http://localhost:1337",
-            "preLaunchTask": "CDN Serve and watch (Dev)"
-        },
-        {
-            /*
-            Launch the playground to be use to test changes in dev packages
-            */
-            "type": "msedge",
-            "request": "launch",
-            "name": "Run and Watch Dev Server - SSL (ES5-Dev)",
-            "url": "https://localhost:1337",
-            "preLaunchTask": "CDN Serve and watch (Dev)"
-        },
-        {
-            /*
-            Launch the playground to be use to test changes in dev packages
-            */
-            "type": "msedge",
-            "request": "launch",
-            "name": "Dev Host development (Edge)",
-            "url": "http://localhost:1338",
-            "preLaunchTask": "Run Dev host (Dev)"
-        },
-        {
-            /*
-            Launch the playground to be use to test changes in dev packages
-            */
             "type": "chrome",
             "request": "launch",
             "name": "Dev Host development (Chrome)",
