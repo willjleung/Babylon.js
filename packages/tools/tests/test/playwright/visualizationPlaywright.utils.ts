@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 
-import { test, expect, Page } from "@playwright/test";
+import { test, expect, Page, request } from "@playwright/test";
 import { getGlobalConfig } from "@tools/test-tools";
 
 export const evaluatePlaywrightVisTests = async (engineType = "webgl2", testFileName = "config", debug = false, debugWait = false, logToConsole = true, logToFile = false) => {
@@ -124,7 +124,7 @@ export const evaluatePlaywrightVisTests = async (engineType = "webgl2", testFile
             //Incorporate Minh and Cam's code into this part of the code
             if (testCase.isAudioTest === true) {
                 //Using page.evaulate to interact with the audioContext
-                await page.evaluate(() => {
+                await page.evaluate(async () => {
                     const canvas = window.engine.getRenderingCanvas() as HTMLCanvasElement;
                     debugger;
 
@@ -149,7 +149,7 @@ export const evaluatePlaywrightVisTests = async (engineType = "webgl2", testFile
                     visualizationCanvas.style.left = "0px"; // Align to the very left of the screen
                     document.body.appendChild(visualizationCanvas);
 
-                    const ctx = visualizationCanvas.getContext("2d");
+                    const ctx = visualizationCanvas.getContext("2d")!;
                     if (!ctx) {
                         console.error("2D context not available");
                     }
@@ -157,6 +157,22 @@ export const evaluatePlaywrightVisTests = async (engineType = "webgl2", testFile
                     //clearing canvas before drawing
                     ctx.fillStyle = "#000";
                     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+                    //function that draws data
+                    function draw() {
+                        debugger;
+                        //call requestanimation frame again so that the data
+                        requestAnimationFrame(draw);
+                    }
+                    //on new frame runs the draw function
+                    requestAnimationFrame(draw);
+                    //Set timeout to 5000, random high number is just to test debugger
+
+                    await new Promise<void>((resolve) => {
+                        setTimeout(() => {
+                            resolve();
+                        }, 5000);
+                    });
                 });
             }
 
