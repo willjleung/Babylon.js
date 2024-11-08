@@ -128,7 +128,7 @@ export const evaluatePlaywrightVisTests = async (engineType = "webgl2", testFile
                     const canvas = window.engine.getRenderingCanvas() as HTMLCanvasElement;
                     debugger;
 
-                    //Creating
+                    //Creating a variable with the BABYLON Audio Engine
                     const audioEngine = BABYLON.Engine.audioEngine!;
                     //Creating an audioContext
                     const audioContext = audioEngine.audioContext!;
@@ -154,15 +154,71 @@ export const evaluatePlaywrightVisTests = async (engineType = "webgl2", testFile
                         console.error("2D context not available");
                     }
 
+                    //function to visualize data
+                    function visualizeFreqData(
+                        ctx: CanvasRenderingContext2D,
+                        analyzer: AnalyserNode,
+                        freqData: Float32Array,
+                        options: {
+                            min: number;
+                            range: { minFreq: number; maxFreq: number };
+                            barColor: string;
+                            backgroundColor: string;
+                            timeout: number;
+                            startTime: number;
+                            endTime: number;
+                        }
+                    ): void {
+                        const { min, range, barColor, backgroundColor, timeout, startTime, endTime } = options;
+
+                        // Get updated frequency data
+                        analyzer.getFloatFrequencyData(freqData);
+
+                        // Clear the canvas before drawing
+                        //ctx.fillStyle = backgroundColor;
+                        //ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+                        // Calculate the frequency bin range based on the sample rate and FFT size
+                        const nyquistFreq = analyzer.context.sampleRate / 2;
+                        const barWidth = ctx.canvas.width / freqData.length;
+
+                        for (let i = 0; i < freqData.length; i++) {
+                            const frequencyIndex = (i / freqData.length) * nyquistFreq;
+
+                            // Only show frequencies within the specified range
+                            if (frequencyIndex < range.minFreq || frequencyIndex > range.maxFreq) {
+                                continue;
+                            }
+
+                            // Apply the minimum threshold to frequency data
+                            const value = freqData[i] < min ? 0 : freqData[i];
+
+                            const barHeight = (value + 140) * 2; // Adjust to make the bars visible
+                            ctx.fillStyle = barColor;
+                            ctx.fillRect(i * barWidth, ctx.canvas.height - barHeight, barWidth, barHeight);
+                        }
+                    }
+
                     //clearing canvas before drawing
                     ctx.fillStyle = "#000";
                     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
                     //function that draws data
                     function draw() {
-                        debugger;
-                        //call requestanimation frame again so that the data
+                        //debugger line is below for breakpoint if needed
+                        //debugger;
+
+                        //call requestanimation frame again so that the data is drawn continuously
                         requestAnimationFrame(draw);
+                        visualizeFreqData(ctx, analyzer, freqData, {
+                            min: -60, // Minimum dB threshold for visualization
+                            range: { minFreq: 50, maxFreq: 2000 }, // Frequency range to visualize
+                            barColor: "rgb(100, 50, 150)", // Color for bars
+                            backgroundColor: "#000", // Background color
+                            timeout: 1000,
+                            startTime: 1000,
+                            endTime: 10000,
+                        });
                     }
                     //on new frame runs the draw function
                     requestAnimationFrame(draw);
