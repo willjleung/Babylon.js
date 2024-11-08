@@ -140,6 +140,7 @@ export const evaluatePlaywrightVisTests = async (engineType = "webgl2", testFile
                     masterGainNode.connect(analyzer);
 
                     const freqData = new Float32Array(analyzer.frequencyBinCount);
+                    let timeSlice = 0;
 
                     const visualizationCanvas = document.createElement("canvas");
                     visualizationCanvas.width = canvas.width;
@@ -170,39 +171,67 @@ export const evaluatePlaywrightVisTests = async (engineType = "webgl2", testFile
                         }
                     ): void {
                         const { min, range, barColor, backgroundColor, timeout, startTime, endTime } = options;
-
-                        // Get updated frequency data
-                        analyzer.getFloatFrequencyData(freqData);
-
-                        // Clear the canvas before drawing
-                        //ctx.fillStyle = backgroundColor;
-                        //ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-                        // Calculate the frequency bin range based on the sample rate and FFT size
                         const nyquistFreq = analyzer.context.sampleRate / 2;
-                        const barWidth = ctx.canvas.width / freqData.length;
 
-                        for (let i = 0; i < freqData.length; i++) {
-                            const frequencyIndex = (i / freqData.length) * nyquistFreq;
+                        const renderFreqData = () => {
+                            requestAnimationFrame(renderFreqData);
 
-                            // Only show frequencies within the specified range
-                            if (frequencyIndex < range.minFreq || frequencyIndex > range.maxFreq) {
-                                continue;
+                            const time = audioContext.currentTime * 1000;
+                            if (time < timeout) {
+                                return;
                             }
 
-                            // Apply the minimum threshold to frequency data
-                            const value = freqData[i] < min ? 0 : freqData[i];
+                            // Ensure we only start visualizing at the specified startTime
+                            if (time < startTime * 1000) {
+                                return;
+                            }
 
-                            const barHeight = (value + 140) * 2; // Adjust to make the bars visible
-                            ctx.fillStyle = barColor;
-                            ctx.fillRect(i * barWidth, ctx.canvas.height - barHeight, barWidth, barHeight);
-                        }
+                            // Calculate the normalized time slice as a proportion of the time range
+                            const duration = (endTime - startTime) * 1000; // in milliseconds
+                            const elapsedTime = time - startTime * 1000;
+                            const proportion = elapsedTime / duration;
+
+                            // Set `timeSlice` based on canvas width and proportion of elapsed time
+                            const maxTimeSlice = ctx.canvas.width;
+                            timeSlice = Math.min(Math.floor(proportion * maxTimeSlice), maxTimeSlice);
+
+                            // Get updated frequency data
+                            analyzer.getFloatFrequencyData(freqData);
+
+                            for (let i = 0; i < freqData.length; i++) {
+                                const frequencyIndex = (i / freqData.length) * nyquistFreq;
+
+                                // Only show frequencies within the specified range
+                                if (frequencyIndex < range.minFreq || frequencyIndex > range.maxFreq) {
+                                    continue;
+                                }
+
+                                const value = freqData[i];
+                                const barHeight = -value * 2;
+                                const color = `rgb(${(barHeight / 100) * 255}, 0, 0, 1)`;
+                                ctx.fillStyle = color;
+                                ctx.fillRect(timeSlice, ctx.canvas.height - i, 1, 1);
+                            }
+                        };
+
+                        requestAnimationFrame(renderFreqData);
                     }
 
                     //clearing canvas before drawing
                     ctx.fillStyle = "#000";
                     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+                    visualizeFreqData(ctx, analyzer, freqData, {
+                        min: -60, // Minimum dB threshold for visualization
+                        range: { minFreq: 50, maxFreq: 2000 }, // Frequency range to visualize
+                        barColor: "rgb(100, 50, 150)", // Color for bars
+                        backgroundColor: "#000", // Background color
+                        timeout: 1000,
+                        startTime: 2,
+                        endTime: 10,
+                    });
+
+                    /*
                     //function that draws data
                     function draw() {
                         //debugger line is below for breakpoint if needed
@@ -223,11 +252,12 @@ export const evaluatePlaywrightVisTests = async (engineType = "webgl2", testFile
                     //on new frame runs the draw function
                     requestAnimationFrame(draw);
                     //Set timeout to 5000, random high number is just to test debugger
+                    */
 
                     await new Promise<void>((resolve) => {
                         setTimeout(() => {
                             resolve();
-                        }, 5000);
+                        }, 50000);
                     });
                 });
             }
