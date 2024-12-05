@@ -162,7 +162,7 @@ export const evaluatePlaywrightVisTests = async (engineType = "webgl2", testFile
                         freqData: Float32Array,
                         options: {
                             min: number;
-                            range: { minFreq: number; maxFreq: number };
+                            range: { min: number; max: number };
                             barColor: string;
                             backgroundColor: string;
                             timeout: number;
@@ -170,50 +170,110 @@ export const evaluatePlaywrightVisTests = async (engineType = "webgl2", testFile
                             endTime: number;
                         }
                     ): void {
+                        function decimalToHex(r, g, b) {
+                            function componentToHex(c) {
+                                let hex = c.toString(16);
+                                return hex.length === 1 ? "0" + hex : hex;
+                            }
+
+                            return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+                        }
+
+                        const screenWidth = ctx.canvas.width;
+                        const screenHeight = ctx.canvas.height;
+
+                        // for (let x = 0; x < screenWidth; x++) {
+                        //     for (let y = 0; y < screenHeight / 2; y++) {
+                        //         ctx.fillRect(x, y, 1, 1);
+                        //     }
+                        // }
+
+                        const volumeMax = 255;
+                        const colorMax = 255;
+                        const volumeToColorRatio = colorMax / volumeMax;
+
+                        let x = 0;
+                        let timeSlice = 0; // Tracks the current horizontal position for the visualization
+                        let timeSliceAtStart = 0; // Tracks the timeSlice when the startTime is met, to draw from the left edge of screen
+                        let endFlag = true; // Tracks if the endTime has been met so that no more changes occur to the canvas
+
                         const { min, range, barColor, backgroundColor, timeout, startTime, endTime } = options;
-                        const nyquistFreq = analyzer.context.sampleRate / 2;
+                        //const nyquistFreq = analyzer.context.sampleRate / 2;
 
                         const renderFreqData = () => {
+                            if (timeSlice >= ctx.canvas.width) {
+                                // Don't go through the rest of the function as the screen has been filled
+                                return;
+                            }
+
                             requestAnimationFrame(renderFreqData);
-
-                            const time = audioContext.currentTime * 1000;
-                            if (time < timeout) {
-                                return;
+                            let yRatio = screenHeight / freqData.length;
+                            if (yRatio > 1) {
+                                yRatio = 1;
                             }
 
-                            // Ensure we only start visualizing at the specified startTime
-                            if (time < startTime * 1000) {
-                                return;
-                            }
-
-                            // Calculate the normalized time slice as a proportion of the time range
-                            const duration = (endTime - startTime) * 1000; // in milliseconds
-                            const elapsedTime = time - startTime * 1000;
-                            const proportion = elapsedTime / duration;
-
-                            // Set `timeSlice` based on canvas width and proportion of elapsed time
-                            const maxTimeSlice = ctx.canvas.width;
-                            timeSlice = Math.min(Math.floor(proportion * maxTimeSlice), maxTimeSlice);
-
-                            // Get updated frequency data
                             analyzer.getFloatFrequencyData(freqData);
 
-                            for (let i = 0; i < freqData.length; i++) {
-                                const frequencyIndex = (i / freqData.length) * nyquistFreq;
+                            if (endFlag) {
+                                ctx.clearRect(timeSlice, 0, 1, screenHeight); // Clear the current column before drawing
+                            }
 
-                                // Only show frequencies within the specified range
-                                if (frequencyIndex < range.minFreq || frequencyIndex > range.maxFreq) {
-                                    continue;
+                            let freqDataIndex = 0;
+                            let freqUpperBound = Math.round(freqData.length * yRatio);
+
+                            for (let y = 0; y < freqUpperBound; y += yRatio) {
+                                // Break if the startTime hasn't been met yet
+                                if (audioContext.currentTime < options.startTime) {
+                                    break;
+                                } else if (timeSlice > ctx.canvas.width) {
+                                    break;
                                 }
 
-                                const value = freqData[i];
-                                const barHeight = -value * 2;
-                                const color = `rgb(${(barHeight / 100) * 255}, 0, 0, 1)`;
-                                ctx.fillStyle = color;
-                                ctx.fillRect(timeSlice, ctx.canvas.height - i, 1, 1);
-                            }
-                        };
+                                // Break when the endTime is met, set flag to false to make sure it doesn't run again, crop, scale, and display image
+                                else if (audioContext.currentTime > options.endTime && endFlag) {
+                                    let myData = ctx.canvas.toDataURL();
+                                    const image = new Image();
 
+                                    // when the image fully loads, perform a crop and scale the cropped image to fit the screen
+                                    image.onload = () => {
+                                        const cropX = 0; // starting X for crop
+                                        const cropY = Math.round(options.range.min * ctx.canvas.height); // starting Y for crop, assumes that you may want to crop lower in image
+                                        const cropHeight = Math.round(options.range.max * ctx.canvas.height) - cropY; // height of crop in px
+                                        const cropWidth = timeSlice - timeSliceAtStart; // width of crop in px
+
+                                        // draws cropped image of the visualization and scales it to the canvas height and width
+                                        ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, ctx.canvas.width, ctx.canvas.height);
+                                        endFlag = false;
+                                    };
+                                    image.src = myData;
+                                    break;
+                                }
+
+                                // endTime is met don't draw any more rectangles
+                                else if (endFlag == false) {
+                                    break;
+                                }
+
+                                // Takes the currentTimeSlice as soon as the startTime is met to make sure the visualization always starts from the left side of the screen
+                                else if (timeSliceAtStart == 0 && options.startTime != 0) {
+                                    timeSliceAtStart = timeSlice;
+                                }
+
+                                let volume = freqData[freqDataIndex]; // This will be a negative value
+
+                                let color = Math.round(-volume * volumeToColorRatio); // Convert to positive to make sure we get a value between 0 and 255
+
+                                if (volume < options.min) {
+                                    color = 255;
+                                }
+                                let colorString = decimalToHex(color, color, color);
+
+                                ctx.fillStyle = colorString;
+                                ctx.fillRect(timeSlice - timeSliceAtStart, Math.round(y), 1, 1);
+                                freqDataIndex++;
+                            }
+                            timeSlice++;
+                        };
                         requestAnimationFrame(renderFreqData);
                     }
 
@@ -222,37 +282,16 @@ export const evaluatePlaywrightVisTests = async (engineType = "webgl2", testFile
                     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
                     visualizeFreqData(ctx, analyzer, freqData, {
-                        min: -60, // Minimum dB threshold for visualization
-                        range: { minFreq: 50, maxFreq: 2000 }, // Frequency range to visualize
+                        min: -200, // Minimum dB threshold for visualization
+                        range: { min: 0, max: 0.125 }, // Frequency range to visualize
                         barColor: "rgb(100, 50, 150)", // Color for bars
                         backgroundColor: "#000", // Background color
-                        timeout: 1000,
+                        timeout: 5000,
                         startTime: 2,
                         endTime: 10,
                     });
 
-                    /*
-                    //function that draws data
-                    function draw() {
-                        //debugger line is below for breakpoint if needed
-                        //debugger;
-
-                        //call requestanimation frame again so that the data is drawn continuously
-                        requestAnimationFrame(draw);
-                        visualizeFreqData(ctx, analyzer, freqData, {
-                            min: -60, // Minimum dB threshold for visualization
-                            range: { minFreq: 50, maxFreq: 2000 }, // Frequency range to visualize
-                            barColor: "rgb(100, 50, 150)", // Color for bars
-                            backgroundColor: "#000", // Background color
-                            timeout: 1000,
-                            startTime: 1000,
-                            endTime: 10000,
-                        });
-                    }
-                    //on new frame runs the draw function
-                    requestAnimationFrame(draw);
                     //Set timeout to 5000, random high number is just to test debugger
-                    */
 
                     await new Promise<void>((resolve) => {
                         setTimeout(() => {
