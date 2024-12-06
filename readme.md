@@ -113,23 +113,8 @@ If you want to contribute, please read our [contribution guidelines](https://doc
 - [Documentation](https://doc.babylonjs.com)
 - [Demos](https://www.babylonjs.com/community/)
 
-## Useful links
 
-- Official web site: [www.babylonjs.com](https://www.babylonjs.com/)
-- Online [playground](https://playground.babylonjs.com/) to learn by experimentating
-- Online [sandbox](https://www.babylonjs.com/sandbox) where you can test your .babylon and glTF scenes with a simple drag'n'drop
-- Online [shader creation tool](https://cyos.babylonjs.com/) where you can learn how to create GLSL shaders
-- 3DS Max [exporter](https://github.com/BabylonJS/Exporters/tree/master/3ds%20Max) can be used to generate a .babylon file from 3DS Max
-- Maya [exporter](https://github.com/BabylonJS/Exporters/tree/master/Maya) can be used to generate a .babylon file from Maya
-- Blender [exporter](https://github.com/BabylonJS/BlenderExporter) can be used to generate a .babylon file from Blender 3d
-- Unity 5[ (deprecated) exporter](https://github.com/BabylonJS/Exporters/tree/master/Unity) can be used to export your geometries from Unity 5 scene editor(animations are supported)
-- [glTF Tools](https://github.com/KhronosGroup/glTF#gltf-tools) by KhronosGroup
-
-## Features
-
-To get a complete list of supported features, please visit our [website](https://www.babylonjs.com/specifications/).
-
-Audio Test Project Setup and Testing Guide
+## Audio Test Project Setup and Testing Guide
 
 Prerequisites
 Ensure that you have the following VSCode extensions installed to facilitate development and testing:
