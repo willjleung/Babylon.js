@@ -116,6 +116,8 @@ If you want to contribute, please read our [contribution guidelines](https://doc
 
 ## Audio Test Project Setup and Testing Guide
 
+Follow all previous Babylon installation steps and then make sure you have the following:
+
 Prerequisites
 Ensure that you have the following VSCode extensions installed to facilitate development and testing:
 
