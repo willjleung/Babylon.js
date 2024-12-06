@@ -128,3 +128,41 @@ If you want to contribute, please read our [contribution guidelines](https://doc
 ## Features
 
 To get a complete list of supported features, please visit our [website](https://www.babylonjs.com/specifications/).
+
+Audio Test Project Setup and Testing Guide
+
+Prerequisites
+Ensure that you have the following VSCode extensions installed to facilitate development and testing:
+
+Debugger for Firefox
+Docker
+ENV
+ESLint
+Jest
+Jest Runner
+Microsoft Edge Tools for VSCode
+Playwright Test for VSCode
+Prettier - Code formatter
+TypeScript + Webpack Problem Matcher
+webhint
+Installation
+Install Babylon: Follow the official Babylon installation instructions to set up Babylon locally.
+Install Required Extensions: Make sure the VSCode extensions listed in the prerequisites section are installed.
+Running Tests
+Start the Babylon Local Server:
+
+If the Babylon local server does not start automatically when running the test, manually start it using the following command in the terminal:
+npm run serve -w @tools/babylon-server
+
+Run the Playwright Test:
+Start the Playwright test in VSCode after the Babylon local server is up and running.
+Go to the Testing Tab on the left. Hover the Playwright drop down menu and click the play button (Labeled "Run Test")
+
+Debugging Tips
+To view the visual representation with debugger statements:
+Click the Play Code button in the browser console.
+Wait for the code to finish running or exit out of the browser early if needed.
+Troubleshooting
+If you encounter any issues while starting the server or running the tests, ensure all dependencies and extensions are correctly installed and updated to their latest versions.
+If the test runs into unexpected errors, try restarting VSCode and re-running the steps outlined above.
+
